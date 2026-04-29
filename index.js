@@ -1,9 +1,8 @@
 const express = require('express'); 
 const cors = require('cors')
 const erBase = require("eventregistry");
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const genAI = new GoogleGenerativeAI('AIzaSyB2i08G0DwrDyRFn-8Ezd08yGRCvf6v7o8');
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const Groq = require('groq-sdk');
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const app = express();
 const port = 3000;
 const cache = {};
@@ -50,17 +49,25 @@ app.post('/upload', async (req, res) => {
         const imageData = req.body;
         if (!imageData) return res.status(400).send({ error: 'No image provided' });
         const cleanData = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
-        const result = await model.generateContent([
-            "I want you to send back a JSON object only, not even formatting. It must have a \"recyclable\" key, the value of which is a boolean that says whether the object in focus is recyclable or not. There should also be a \"type\" key, the value of which is a string, saying the following: \"This is a or these are [type of object in focus], which is/are\". Lastly, there should be an \"info\" key, the value of which is a string. This value should have any additional information or facts about its eco friendliness",
-            {
-                inlineData: {
-                    data: cleanData,
-                    mimeType: 'image/jpeg',
-                },
-            }
-        ]);
-        console.log(result.response.text());
-        res.send(result.response.text());
+        const result = await groq.chat.completions.create({
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages: [{
+                role: 'user',
+                content: [
+                    {
+                        type: 'text',
+                        text: 'I want you to send back a JSON object only, no markdown formatting or code fences. It must have a "recyclable" key (boolean), a "type" key (string starting with "This is a" or "These are" describing the object), and an "info" key (string with eco-friendliness facts).'
+                    },
+                    {
+                        type: 'image_url',
+                        image_url: { url: `data:image/jpeg;base64,${cleanData}` }
+                    }
+                ]
+            }]
+        });
+        const text = result.choices[0].message.content;
+        console.log(text);
+        res.send(text);
     } catch (error) {
         console.error('Error processing image:', error);
         res.status(500).send(`Error: ${error.message}`);
@@ -97,12 +104,16 @@ app.get('/article', async (req, res) => {
     const data = await response.json();
     const articleData = data[uri].info;
 
-    const newBody = await model.generateContent(
-      `Format this using markdown, for the small sections you can add ## and ###\n${articleData.title}\n${articleData.date} by ${articleData.authors[0] ? articleData.authors[0].name : 'Anonymous'}\n ${articleData.body}`
-    );
+    const newBody = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{
+        role: 'user',
+        content: `Format this using markdown, for the small sections you can add ## and ###\n${articleData.title}\n${articleData.date} by ${articleData.authors[0] ? articleData.authors[0].name : 'Anonymous'}\n ${articleData.body}`
+      }]
+    });
 
     // Cache the processed article content
-    cache[uri] = newBody.response.candidates[0].content.parts[0].text;
+    cache[uri] = newBody.choices[0].message.content;
 
     // Send the cached article content
     res.send(cache[uri]);
