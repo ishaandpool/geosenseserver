@@ -63,7 +63,7 @@ app.post('/upload', async (req, res) => {
         res.send(result.response.text());
     } catch (error) {
         console.error('Error processing image:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send(`Error: ${error.message}`);
     }
 });
 app.get('/article', async (req, res) => {
