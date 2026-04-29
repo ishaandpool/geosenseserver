@@ -45,23 +45,25 @@ app.get('/news', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 }); 
-app.post('/upload', (req, res) => {
+app.post('/upload', async (req, res) => {
     const uri = req.body;
     if (!uri) return res.status(400).send({ error: 'No URI provided' });
-    require("fs").writeFile("out.png", uri.replace(/^data:image\/png;base64,/, ""), 'base64', async function(err) {    
+    try {
         const result = await model.generateContent([
-        "I want you to send back a JSON object only, not even formatting. It must have a \"recyclable\" key, the value of which is a boolean that says whether the object in focus is recyclable or not. There should also be a \"type\" key, the value of which is a string, saying the following: \"This is a or these are [type of object in focus], which is/are\". Lastly, there should be an \"info\" key, the value of which is a string. This value should have any additional information or facts about its eco friendliness",
-        {
-            inlineData: {
-              data: uri.replace(/^data:image\/png;base64,/, ""),
-              mimeType: "image/png",
-            },
-          } 
+            "I want you to send back a JSON object only, not even formatting. It must have a \"recyclable\" key, the value of which is a boolean that says whether the object in focus is recyclable or not. There should also be a \"type\" key, the value of which is a string, saying the following: \"This is a or these are [type of object in focus], which is/are\". Lastly, there should be an \"info\" key, the value of which is a string. This value should have any additional information or facts about its eco friendliness",
+            {
+                inlineData: {
+                    data: uri.replace(/^data:image\/png;base64,/, ""),
+                    mimeType: "image/png",
+                },
+            }
         ]);
         console.log(result.response.text());
-        res.send(result.response.text());    
-    });
-
+        res.send(result.response.text());
+    } catch (error) {
+        console.error('Error processing image:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 app.get('/article', async (req, res) => {
   const uri = req.query.uri;
