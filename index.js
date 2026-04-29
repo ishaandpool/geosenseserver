@@ -47,14 +47,7 @@ app.get('/news', async (req, res) => {
 }); 
 app.post('/upload', async (req, res) => {
     try {
-        let imageData, mimeType;
-        if (req.body && typeof req.body === 'object' && req.body.data) {
-            imageData = req.body.data;
-            mimeType = req.body.mimeType || 'image/jpeg';
-        } else {
-            imageData = req.body;
-            mimeType = 'image/jpeg';
-        }
+        const imageData = req.body;
         if (!imageData) return res.status(400).send({ error: 'No image provided' });
         const cleanData = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
         const result = await model.generateContent([
@@ -62,7 +55,7 @@ app.post('/upload', async (req, res) => {
             {
                 inlineData: {
                     data: cleanData,
-                    mimeType: mimeType,
+                    mimeType: 'image/jpeg',
                 },
             }
         ]);
