@@ -127,7 +127,7 @@ app.get('/article', async (req, res) => {
 const read = async (key) => await kv.get(key);
 
 // Function to write to Vercel KV
-const set = async (key, jsonData) => await kv.set(key, JSON.stringify(jsonData, null, 2));
+const set = async (key, jsonData) => await kv.set(key, jsonData);
 // Function to update Vercel KV
 const update = async (key, newData) => {
   const existingData = await read(key) || {};
