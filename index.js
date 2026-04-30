@@ -56,7 +56,7 @@ app.post('/upload', async (req, res) => {
                 content: [
                     {
                         type: 'text',
-                        text: 'I want you to send back a JSON object only, no markdown formatting or code fences. It must have a "disposal" key (string, must be exactly one of: "recycling", "compost", or "trash"), a "type" key (string starting with "This is a" or "These are" describing the object), and an "info" key (string with eco-friendliness facts and disposal tips).'
+                        text: 'I want you to send back a JSON object only, no markdown formatting or code fences. It must have a "recyclable" key (boolean), a "type" key (string starting with "This is a" or "These are" describing the object), and an "info" key (string with eco-friendliness facts).'
                     },
                     {
                         type: 'image_url',
